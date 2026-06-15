@@ -157,7 +157,7 @@ The following publications and sources of information may be useful to you or ar
 
 -  "[RFC 2246] The TLS Protocol Version 1.0" at "Links to UEFI-Related Documents" (*http://uefi.org/uefi)* .
 
--  "[RFC2315] Cryptographic Message Syntax Version 1.5" at "Links to UEFI-Related Documents" (*http://uefi.org/uefi)* .
+-  "[RFC2315] PKCS #7: Cryptographic Message Standard Version 1.5" at "Links to UEFI-Related Documents" (*http://uefi.org/uefi)* . This document is historical and has been superseded by the Cryptographic Message Syntax ([RFC5652]).
 
 -  "[RFC2347] TFTP Option Extension" heading at "Links to UEFI-Related Documents" (*http://uefi.org/uefi)* . Refer to Appendix E, "32/64-Bit UNDI Specification," for more information.
 
@@ -225,12 +225,15 @@ The following publications and sources of information may be useful to you or ar
 
 -  "[RFC 5281] Extensible Authentication Protocol Tunneled Transport Layer Security Authenticated Protocol Version 0" at "Links to UEFI-Related Documents" (*http://uefi.org/uefi)* .
 
+-  "[RFC5652] Cryptographic Message Syntax (CMS)" at "Links to UEFI-Related Documents" (*http://uefi.org/uefi)* .
+
 -  "[RFC 5970] DHCPv6 Options for Network Boot," at "Links to UEFI-Related Documents" (*http://uefi.org/uefi)* .
 
 -  "[RFC 6101] The Secure Sockets Layer (SSL) Protocol Version 3.0" at "Links to UEFI-Related Documents" (*http://uefi.org/uefi)* .
 
 -  "[RFC 6347] Datagram Transport Layer Security Version 1.2 (DTLS)" at "Links to UEFI-Related Documents" (*http://uefi.org/uefi)* .
 
+-  "[RFC9882] Use of the Module-Lattice-Based Digital Signature Algorithm (ML-DSA) in the Cryptographic Message Syntax (CMS)" at "Links to UEFI-Related Documents" (*http://uefi.org/uefi)* .
 -  "[SM spec] Common Security: CDSA and CSSM, Version 2 (with corrigenda), was Signed Manifest Specification" at "Links to UEFI-Related Documents" (*http://uefi.org/uefi)* .
 
 -   *Super VGA Graphics Programming Secrets* , Steve Rimmer, Windcrest / McGraw-Hill, 1993, ISBN: 0-8306-4428-8.

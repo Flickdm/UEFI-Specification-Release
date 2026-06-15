@@ -1981,7 +1981,7 @@ There are a number of elements that can be added or removed depending on the spe
 
   27. If a platform permits the installation of Load Option Variables, (Boot####, or Driver####, or SysPrep####), the platform must support and recognize all defined values for Attributes within the variable and report these capabilities in BootOptionSupport. If a platform supports installation of Load Option Variables of type Driver####, all installed Driver#### variables must be processed and the indicated driver loaded and initialized during every boot. And all installed SysPrep#### options must be processed prior to processing Boot#### options.
 
-  28. If the platform supports UEFI secure boot as described in :ref:`secure-boot-and-driver-signing`, the platform must provide the PKCS verification functions described in :ref:`pkcs7-verify-protocol` . 
+  28. If the platform supports UEFI secure boot as described in :ref:`secure-boot-and-driver-signing`, the platform must provide the CMS-based signature verification functions described in :ref:`pkcs7-verify-protocol` . 
 
   29. If a platform includes an I/O subsystem that utilizes SD or eMMC command packets, then the  :ref:`efi-sd-mmc-pass-thru-protocol`  must be implemented.
 
@@ -2097,7 +2097,7 @@ Cryptographic Algorithm Requirement
 
 1. UEFI variable authentication
 
-   - For EFI_VARIABLE_AUTHENTICATION_3 or EFI_VARIABLE_AUTHENTICATION_2 descriptor, SignedData.digestAlgorithms shall support SHA-256 (oid: 2.16.840.1.101.3.4.2.1), SignerInfo.digestEncryptionAlgorithm be support digest encryption algorithm of RSA with PKCS #1 v1.5 padding (RSASSA_PKCS1v1_5) (oid: sha256WithRSAEncryption: 1.2.840.113549.1.1.11).
+   - For EFI_VARIABLE_AUTHENTICATION_3 or EFI_VARIABLE_AUTHENTICATION_2 descriptor, the CMS *SignedData* structure (see [RFC5652]; the PKCS #7 version 1.5 profile of [RFC2315] is the backward-compatible baseline) shall support SignedData.digestAlgorithms of SHA-256 (oid: 2.16.840.1.101.3.4.2.1), and SignerInfo.signatureAlgorithm shall support RSA with PKCS #1 v1.5 padding (RSASSA_PKCS1v1_5) (oid: sha256WithRSAEncryption: 1.2.840.113549.1.1.11). Additional signature algorithms may be identified through the CMS *AlgorithmIdentifier* fields.
 
 2. EAP protocol
 
@@ -2117,4 +2117,4 @@ Cryptographic Algorithm Requirement
 
 6. PKCS7 Verify Protocol.
 
-   - Digest (Hash) Algorithm shall support SHA-256 (oid: 2.16.840.1.101.3.4.2.1). Digest Encryption shall support sha256WithRSAEncryption (oid: 1.2.840.113549.1.1.11).
+   - Digest (Hash) Algorithm shall support SHA-256 (oid: 2.16.840.1.101.3.4.2.1). The signature algorithm shall support sha256WithRSAEncryption (oid: 1.2.840.113549.1.1.11). The protocol verifies CMS *SignedData* (see [RFC5652]); additional signature algorithms may be identified through the CMS *AlgorithmIdentifier* fields.
