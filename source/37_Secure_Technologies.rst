@@ -2380,6 +2380,8 @@ The *GetKeyByAttributes()* function will return a status which indicates the ove
 PKCS7 Verify Protocol
 ---------------------
 
+.. note:: The protocol name *EFI_PKCS7_VERIFY_PROTOCOL* is historical. PKCS#7 (see [RFC2315]) has been superseded by the Cryptographic Message Syntax (CMS, see [RFC5652]). The verification semantics defined in this section are CMS-based, and the protocol name does not constrain the signature algorithm families that an implementation may accept (for example RSA, ECDSA, or ML-DSA; see [RFC9882]). The name *EFI_PKCS7_VERIFY_PROTOCOL* is retained for backward compatibility. New software should use the *EFI_CMS_VERIFY_PROTOCOL* alias defined below.
+
 .. _efi-pkcs7-verify-protocol:
 
 EFI_PKCS7_VERIFY_PROTOCOL
@@ -2387,13 +2389,11 @@ EFI_PKCS7_VERIFY_PROTOCOL
 
 **Summary**
 
-EFI_PKCS7_VERIFY_PROTOCOL  (See: http://tools.ietf.org/html/rfc2315 ) may be used to verify data signed with PKCS#7 formatted authentication. The PKCS#7 data to be verified must be binary DER encoded. Additional information on the supported ASN.1 formatting is provided below.
+*EFI_PKCS7_VERIFY_PROTOCOL* may be used to verify data signed using a Cryptographic Message Syntax (CMS) *SignedData* structure (see [RFC5652]). The signed data to be verified must be binary DER encoded. Additional information on the supported ASN.1 formatting is provided below.
 
-.. TODO check URL above 
- 
-Drivers that supply PKCS7 verification function should publish the 
-| *EFI_PKCS7_VERIFY_PROTOCOL.* Drivers wishing to use the 
-| *EFI_PKCS7_VERIFY_PROTOCOL* may get a reference with *LocateProtocol().*
+The protocol name is historical. PKCS#7 (see [RFC2315]) is the predecessor of, and has been superseded by, CMS ([RFC5652]); a PKCS#7 *SignedData* structure is the backward-compatible subset of a CMS *SignedData* structure. An implementation shall continue to verify RSA-based content that previously verified as PKCS#7 *SignedData*, and identifies the signature and digest algorithms through the CMS *AlgorithmIdentifier* fields and their corresponding algorithm-specific standards.
+
+Drivers that supply this verification function should publish the *EFI_PKCS7_VERIFY_PROTOCOL.* Drivers wishing to use the *EFI_PKCS7_VERIFY_PROTOCOL* may get a reference with *LocateProtocol().*
 
 **GUID**
 
@@ -2416,14 +2416,25 @@ Drivers that supply PKCS7 verification function should publish the
 **Parameters**
 
 VerifyBuffer
-  Examine a DER-encoded PKCS7-signed memory buffer with signature containing embedded data content, or buffer with detached signature and separate data content buffer, and verify using supplied signature lists.
+  Examine a DER-encoded CMS-signed memory buffer with signature containing embedded data content, or buffer with detached signature and separate data content buffer, and verify using supplied signature lists.
 
 VerifySignature
-  Examine a DER-encoded PKCS7-signed memory buffer with signature and, using caller-supplied hash value for signed data, verify using supplied signature lists. 
+  Examine a DER-encoded CMS-signed memory buffer with signature and, using caller-supplied hash value for signed data, verify using supplied signature lists. 
+
+**Related Definitions**
+
+To make the CMS-based semantics explicit in source, an implementation may expose the following aliases. The aliased identifiers refer to the same protocol interface and certificate type and are provided so that new software can use CMS-oriented naming while preserving binary compatibility.
+
+.. code-block::
+
+   typedef EFI_PKCS7_VERIFY_PROTOCOL  EFI_CMS_VERIFY_PROTOCOL;
+
+   #define EFI_CERT_TYPE_CMS_GUID  EFI_CERT_TYPE_PKCS7_GUID
+
 
 **Description**
 
-The *EFI_PKCS7_VERIFY_PROTOCOL* is used to verify data signed using PKCS7 structure. PKCS7 is a general-purpose cryptographic standard (see references). The PKCS7 data to be verified must be ASN.1 (DER) encoded. See the Table below.
+The *EFI_PKCS7_VERIFY_PROTOCOL* is used to verify data signed using a CMS *SignedData* structure. CMS is a general-purpose cryptographic standard (see references). The data to be verified must be ASN.1 (DER) encoded. See the Table below.
 
 .. list-table:: Details of Supported Signature Format
    :widths: 15 75
@@ -2439,11 +2450,11 @@ The *EFI_PKCS7_VERIFY_PROTOCOL* is used to verify data signed using PKCS7 struct
    * - ASN.1 root of Detached Signature
      - *SignedData* or  ContentInfo with *SignedData* content type
    * - Embedded Data Type
-     - Typically ‘Data’ (1.2.840.113549.1.7.1) or other defined OID type (however caller should not depend upon specialized OID processing during PKCS validation.)
+     - Typically ‘Data’ (1.2.840.113549.1.7.1) or other defined OID type (however caller should not depend upon specialized OID processing during validation.)
    * - Digest (Hash) Algorithm ( *VerifyBuffer* function)
-     - See [RFC2315] and OID definition by different standard bodies.
+     - See [RFC5652] and OID definition by different standard bodies.
    * - Digest Encryption
-     - See [RFC2315] and OID definition by different standard bodies.
+     - See [RFC5652] and OID definition by different standard bodies.
    * - Certificate validity dates
      - See *TimeStampDb* description
    * - Signature authenticatedAttributes
@@ -2454,7 +2465,7 @@ The *EFI_PKCS7_VERIFY_PROTOCOL* is used to verify data signed using PKCS7 struct
 
 **References**
 
- PKCS7 is defined by RFC2315. For more information see "Links to UEFI-Related Documents" ( http://uefi.org/uefi ) under the heading "RFC2315 (defines PKCS7)".
+The signed data syntax verified by this protocol is the Cryptographic Message Syntax (CMS), defined by [RFC5652]. PKCS#7 ([RFC2315]) is the historical predecessor of CMS and is processed as the backward-compatible subset of CMS *SignedData*. For more information see "Links to UEFI-Related Documents" ( http://uefi.org/uefi ).
 
 .. _efi_pkcs7_verify_protocol.verifybuffer:
 
@@ -2464,7 +2475,7 @@ EFI_PKCS7_VERIFY_PROTOCOL.VerifyBuffer()
 
 **Summary**
 
-This function processes a buffer containing binary DER-encoded PKCS7 signature. The signed data content may be embedded within the buffer or separated. Function verifies the signature of the content is valid and signing certificate was not revoked and is contained within a list of trusted signers.   
+This function processes a buffer containing a binary DER-encoded CMS *SignedData* structure. The signed data content may be embedded within the buffer or separated. Function verifies the signature of the content is valid and signing certificate was not revoked and is contained within a list of trusted signers.   
 
 
 **Prototype**
@@ -2493,7 +2504,7 @@ This
   Pointer to *EFI_PKCS7_VERIFY_PROTOCOL* instance.
 
 SignedData
-  Points to buffer containing ASN.1 DER-encoded PKCS signature.
+  Points to buffer containing ASN.1 DER-encoded CMS *SignedData* signature.
 
 SignedDataSize
   The size of *SignedData* buffer in bytes.
@@ -2514,7 +2525,7 @@ RevokedDb
   Optional pointer to a list of pointers to *EFI_SIGNATURE_LIST* structures. The list is terminated by a null pointer. List of X.509 certificates of revoked signers and revoked file hashes. Except as noted in description of  *TimeStampDb,* signature verification will always fail if the signer of the file or the hash of the data component of the buffer is in *RevokedDb* list. This list is optional and caller may pass Null or pointer to NULL if not required.
 
 TimeStampDb
-  Optional pointer to a list of pointers to *EFI_SIGNATURE_LIST* structures. The list is terminated by a null pointer. This parameter can be used to pass a list of X.509 certificates of trusted time stamp signers. This list is optional and caller may pass Null or pointer to **NULL** if not required.
+  Optional pointer to a list of pointers to *EFI_SIGNATURE_LIST* structures. The list is terminated by a null pointer. This parameter can be used to pass a list of X.509 certificates of trusted time stamp signers. This list is optional and caller may pass Null or pointer to **NULL** if not required. *This parameter is deprecated and is retained only for backward compatibility; implementations are not required to use it.*
 
 Content
   On input, points to an optional caller-allocated buffer into which the function will copy the content portion of the file after verification succeeds. This parameter is optional and if **NULL**, no copy of content from file is performed.
@@ -2525,13 +2536,13 @@ ContentSize
 
 **Description**
 
-This function processes the buffer *SignedData* for PCKS7 verification. The data that was signed using PKCS is referred to as the ‘Message’. In the process of creating a signature of the message, a SHA256 or other hash of the message bytes, called the ‘Message Digest’, is encrypted using a private key held in secret by the signer. The encrypted hash and the X.509 public key certificate of the signer are formatted according to the ASN.1 PKCS#7 Schema (See References). For the buffer type with the embedded data, the ASN.1 syntax is also used to wrap the data and combine the message data with the signature structure. 
+This function processes the buffer *SignedData* for CMS verification. The data that was signed is referred to as the ‘Message’. In the process of creating a signature of the message, a SHA256 or other hash of the message bytes, called the ‘Message Digest’, is signed using a private key held in secret by the signer. The signature value and the X.509 public key certificate of the signer are formatted according to the CMS *SignedData* syntax (See References). For the buffer type with the embedded data, the ASN.1 syntax is also used to wrap the data and combine the message data with the signature structure. 
 
-The *SignedData* buffer must be ASN.1 DER-encoded format with structure according to the subset defined in the introduction to this protocol. Both embedded content and detached signature formats are supported. In case of embedded content, *SignedData* contains both the PKCS7 signature structure and the message content that was signed. In the case of detached signature, *SignedData* contains only the signature data and *InData* is used to supply the data to be verified. To pass verification the X.509 public certificate of the signer of the file must be found in *AllowedDb* and not be present in *RevokedDb.* Additionally if *RevokedDb* contains a specific Hash signature that matches the hash calculated for the content, the file will also fail verification. The message content will be copied to the caller-supplied buffer *Content* (when present) with *ContentSize* updated to reflect the total size in bytes of the extracted content. 
+The *SignedData* buffer must be ASN.1 DER-encoded format with structure according to the subset defined in the introduction to this protocol. Both embedded content and detached signature formats are supported. In case of embedded content, *SignedData* contains both the CMS *SignedData* signature structure and the message content that was signed. In the case of detached signature, *SignedData* contains only the signature data and *InData* is used to supply the data to be verified. To pass verification the X.509 public certificate of the signer of the file must be found in *AllowedDb* and not be present in *RevokedDb.* Additionally if *RevokedDb* contains a specific Hash signature that matches the hash calculated for the content, the file will also fail verification. The message content will be copied to the caller-supplied buffer *Content* (when present) with *ContentSize* updated to reflect the total size in bytes of the extracted content. 
 
-The *VerifyBuffer()* function performs several steps. First, the buffer containing the user-provided signature is parsed, the content is located and a hash calculated, and the PKCS7 signature of that hash is verified by decrypting the hash calculated at time of signing. Match of current hash with decrypted hash provides indication the structure contained in buffer has not been modified since signing. Next the protocol function attempts to match the signing certificate included within the signed data again the members of an (optional) list of caller-provided revoked certificates ( *RevokedDb* ). The hash of the data is also compared against any hash items contained in *RevokedDb* list. Next the signing certificate is matched against the caller-provided list of trusted signatures. If the signature is valid, the certificate or hash are not in the revoked list, and the certificate is in the trusted list, the file passes verification. 
+The *VerifyBuffer()* function performs several steps. First, the buffer containing the user-provided signature is parsed, the content is located and a hash calculated, and the signature over that content is verified using the signer's public key and the signature algorithm identified in the CMS *SignedData* structure. A successful verification provides indication the structure contained in buffer has not been modified since signing. Next the protocol function attempts to match the signing certificate included within the signed data again the members of an (optional) list of caller-provided revoked certificates ( *RevokedDb* ). The hash of the data is also compared against any hash items contained in *RevokedDb* list. Next the signing certificate is matched against the caller-provided list of trusted signatures. If the signature is valid, the certificate or hash are not in the revoked list, and the certificate is in the trusted list, the file passes verification. 
 
-When *TimeStampDb* list is present this information modifies the processing of revoked certificates found in both *AllowedDb* and *RevokedDb.* When PCKS7 signings that are time-stamped by trusted signer in *TimeStampDb* list, and which time-stamping occurred prior to the time of certificate revocation noted in certificate in *RevokedDb* list, the signing will be allowed and return *EFI_SUCCESS.* *TimeStampDb* parameter is optional and may be NULL or a pointer to NULL when not used. Except in the processing of certificates found in both *AllowedDb* and *RevokedDb,* *TimeStampDb* is not used and time-stamping is not otherwise required for signings verified by certificate only in *AllowedDb.* 
+When *TimeStampDb* list is present this information modifies the processing of revoked certificates found in both *AllowedDb* and *RevokedDb.* When signings that are time-stamped by trusted signer in *TimeStampDb* list, and which time-stamping occurred prior to the time of certificate revocation noted in certificate in *RevokedDb* list, the signing will be allowed and return *EFI_SUCCESS.* *TimeStampDb* parameter is optional and may be NULL or a pointer to NULL when not used. Except in the processing of certificates found in both *AllowedDb* and *RevokedDb,* *TimeStampDb* is not used and time-stamping is not otherwise required for signings verified by certificate only in *AllowedDb.* 
 
 **NOTE:** *This method is intended to be suitable to implement Secure Boot image validation, and as such the contents of* AllowedDb, RevokedDb, *and* TimeStampDb *must also conform with the requirements of* :ref:`authorization-process` , *bullet item 3 (UEFI Image Validation Succeeded)*.
 
@@ -2541,7 +2552,7 @@ The verification function can handle both embedded data or detached signature fo
 
 In case where the *ContentSize* indicated by caller is too small to contain the entire content extracted from the file, *EFI_BUFFER_TOO_SMALL* error is returned, and *ContentSize* is updated to reflect the required size. 
 
-**NOTE:** *When signing certificate is matched to* AllowedDb *or* RevokedDb *lists, a match can occur against an entry in the list at any level of the chain of X.509 certificates present in the PCKS certificate list. This supports signing with a certificate that chains to one of the certificates in the* AllowedDb *or* RevokedDb *lists.*   
+**NOTE:** *When signing certificate is matched to* AllowedDb *or* RevokedDb *lists, a match can occur against an entry in the list at any level of the chain of X.509 certificates present in the CMS certificate list. This supports signing with a certificate that chains to one of the certificates in the* AllowedDb *or* RevokedDb *lists.*   
 
 
 **Related Definitions**
@@ -2615,7 +2626,7 @@ This
   Pointer to *EFI_PKCS7_VERIFY_PROTOCOL* instance.
 
 Signature 
-  Points to buffer containing ASN.1 DER-encoded PKCS detached signature.
+  Points to buffer containing ASN.1 DER-encoded CMS detached *SignedData* signature.
 
 SignatureSize
   The size of *Signature* buffer in bytes.
@@ -2635,22 +2646,22 @@ RevokedDb
   Pointer to a list of pointers to *EFI_SIGNATURE_LIST* structures. The list is terminated by a null pointer. List of X.509 certificates of revoked signers and revoked file hashes. Signature verification will always fail if the signer of the file or the hash of the data component of the buffer is in *RevokedDb* list. This parameter is optional and caller may pass Null if not required.
 
 TimeStampDb
-  Optional pointer to a list of pointers to *EFI_SIGNATURE_LIST* structures. The list is terminated by a null pointer. This parameter can be used to pass a list of X.509 certificates of trusted time stamp counter-signers. 
+  Optional pointer to a list of pointers to *EFI_SIGNATURE_LIST* structures. The list is terminated by a null pointer. This parameter can be used to pass a list of X.509 certificates of trusted time stamp counter-signers. *This parameter is deprecated and is retained only for backward compatibility; implementations are not required to use it.*
 
 
 **Description**
 
-This function processes the buffer *Signature* for PCKS7 verification using hash of the data calculated and pass by caller in the *InHash* buffer. The data that was signed using PKCS is referred to as the ‘Message’. In the process of creating a signature of the message, a hash of the message bytes, called the ‘Message Digest’, is encrypted using a private key held in secret by the signer. The encrypted hash and the X.509 public key certificate of the signer are formatted according to the ASN.1 PKCS#7 Schema (See References). Any data embedded within the PKCS structure is ignored by the function. This function does not support extraction of signature from executable file formats. The address of the PKCS Signature block must be located and passed by the called. 
+This function processes the buffer *Signature* for CMS verification using hash of the data calculated and pass by caller in the *InHash* buffer. The data that was signed is referred to as the ‘Message’. In the process of creating a signature of the message, a hash of the message bytes, called the ‘Message Digest’, is signed using a private key held in secret by the signer. The signature value and the X.509 public key certificate of the signer are formatted according to the CMS *SignedData* syntax (See References). Any data embedded within the structure is ignored by the function. This function does not support extraction of signature from executable file formats. The address of the CMS *SignedData* block must be located and passed by the caller. 
 
-The hash size passed in *InHashSize* must match the size of the signed hash embedded within the PKCS signature structure or an error is returned. 
+The hash size passed in *InHashSize* must match the size of the signed hash embedded within the CMS *SignedData* signature structure or an error is returned. 
 
 The *SignedData* buffer must be ASN.1 DER-encoded format with structure according to the subset defined in the introduction to this protocol. Both embedded content and detached signature formats are supported however embedded data is ignored. To pass verification the X.509 public certificate of the signer of the file must be found in *AllowedDb* and not be present in *RevokedDb.* Additionally, if *RevokedDb* contains a specific Hash signature that matches the hash calculated for the content, the file will also fail verification. 
 
-When *TimeStampDb* list is present this information modifies the processing of revoked certificates found in both *AllowedDb* and *RevokedDb.* When PCKS7 signings that are time-stanped by trusted signer in *TimeStampDb* list, and which time-stamping occurred prior to the time of certificate revocation noted in certificate in *RevokedDb* list, the signing will be allowed and return *EFI_SUCCESS.* *TimeStampDb* parameter is optional and may be NULL or a pointer to NULL when not used. Except in the processing of certificates found in both *AllowedDb* and *RevokedDb,* *TimeStampDb* is not used and time-stamping is not otherwise required for signings verified by certificate only in *AllowedDb.* 
+When *TimeStampDb* list is present this information modifies the processing of revoked certificates found in both *AllowedDb* and *RevokedDb.* When signings that are time-stamped by trusted signer in *TimeStampDb* list, and which time-stamping occurred prior to the time of certificate revocation noted in certificate in *RevokedDb* list, the signing will be allowed and return *EFI_SUCCESS.* *TimeStampDb* parameter is optional and may be NULL or a pointer to NULL when not used. Except in the processing of certificates found in both *AllowedDb* and *RevokedDb,* *TimeStampDb* is not used and time-stamping is not otherwise required for signings verified by certificate only in *AllowedDb.* 
 
-The *VerifySignature()* function performs several steps. First, the buffer containing the user-provided signature is parsed, (any embedded content is ignored), and the PKCS7 signature of hash data is verified by decrypting the hash calculated at time of signing. Match of caller provided hash with decrypted hash provides indication the signed data has not been modified since signing. Next the protocol function attempts to match the signing certificate included within the signed data again the members of an (optional) list of caller-provided revoked certificates ( *RevokedDb* ). The hash of the data is also compared against any hash items contained in *RevokedDb* list. Next the signing certificate is matched against the caller-provided list of trusted signatures. If the signature is valid, the certificate or hash are not in the revoked list, and the certificate is in the trusted list, the file passes verification. 
+The *VerifySignature()* function performs several steps. First, the buffer containing the user-provided signature is parsed, (any embedded content is ignored), and the signature over the hash data is verified using the signer's public key and the signature algorithm identified in the CMS *SignedData* structure. A successful verification of the caller-provided hash provides indication the signed data has not been modified since signing. Next the protocol function attempts to match the signing certificate included within the signed data again the members of an (optional) list of caller-provided revoked certificates ( *RevokedDb* ). The hash of the data is also compared against any hash items contained in *RevokedDb* list. Next the signing certificate is matched against the caller-provided list of trusted signatures. If the signature is valid, the certificate or hash are not in the revoked list, and the certificate is in the trusted list, the file passes verification. 
 
-.. note:: When a signing certificate is matched to AllowedDb or RevokedDb lists, a match can occur against an entry in the list at any level of the chain of X.509 certificates present in the PCKS certificate list. This supports signing with a certificate that chains to one of the certificates in the AllowedDb or RevokedDb lists.
+.. note:: When a signing certificate is matched to AllowedDb or RevokedDb lists, a match can occur against an entry in the list at any level of the chain of X.509 certificates present in the CMS certificate list. This supports signing with a certificate that chains to one of the certificates in the AllowedDb or RevokedDb lists.
 
 .. note:: Because this function uses hashes and the specification contains a variety of hash choices, you should be aware that the check against the RevokedDb list will improperly succeed if the signature is revoked using a different hash algorithm. For this reason, you should either cycle through all UEFI supported hashes to see if one is forbidden, or rely on a single hash choice only if the UEFI signature authority only signs and revokes with a single hash. 
 
