@@ -540,7 +540,9 @@ This structure is the certificate header. There may be zero or more certificates
 
 -  If the *wCertificateType* field is set to *WIN_CERT_TYPE_EFI_GUID,* then the certificate follows the format described in *WIN_CERTIFICATE_UEFI_GUID*.
 
--  If the *wCertificateType* field is set to *WIN_CERT_TYPE_PKCS_SIGNED_DATA* then the certificate is formatted as described in the Authenticode specification. 
+-  If the *wCertificateType* field is set to *WIN_CERT_TYPE_PKCS_SIGNED_DATA* then the certificate is formatted as described in the Authenticode specification.
+
+   *The* WIN_CERT_TYPE_PKCS_SIGNED_DATA *name is historical. The signed data it refers to is a* SignedData *structure following the Cryptographic Message Syntax (CMS, see* [RFC5652] *), of which PKCS #7 (* [RFC2315] *) is the superseded predecessor; the signature and digest algorithms are identified by the CMS* AlgorithmIdentifier *fields. The numeric value of* WIN_CERT_TYPE_PKCS_SIGNED_DATA *and the Authenticode container format are unchanged and remain backward compatible.*
 
 These certificates can be validated using the contents of the signature database described in  `Signature Database`_ . The following table illustrates the relationship between the certificates and the signature types in the database.
 
@@ -685,7 +687,7 @@ The *WIN_CERTIFICATE_UEFI_GUID* certificate type allows new types of certificate
 
 -  If *CertType* is *EFI_CERT_TYPE_RSA2048_SHA256_GUID* then the structure which follows has the format specified by *EFI_CERT_BLOCK_RSA_2048_SHA256*.
 
--  If *CertType* is *EFI_CERT_TYPE_PKCS7_GUID* then the *CertData* component shall contain a DER-encoded PKCS #7 version 1.5 [RFC2315] *SignedData* value.
+-  If *CertType* is *EFI_CERT_TYPE_PKCS7_GUID* then the *CertData* component shall contain a DER-encoded *SignedData* value following the Cryptographic Message Syntax (CMS, see [RFC5652]). The signature and digest algorithms are identified by the CMS *AlgorithmIdentifier* fields and their corresponding algorithm-specific standards. The *EFI_CERT_TYPE_PKCS7_GUID* name is historical; PKCS #7 version 1.5 ([RFC2315]) is the predecessor of CMS, and a PKCS #7 version 1.5 *SignedData* value shall continue to be accepted as the backward-compatible subset of CMS *SignedData*.
 
 
 .. _firmware-os-key-exchange-creating-trust-relationships:
