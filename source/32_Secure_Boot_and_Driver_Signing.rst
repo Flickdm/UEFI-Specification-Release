@@ -687,7 +687,7 @@ The *WIN_CERTIFICATE_UEFI_GUID* certificate type allows new types of certificate
 
 -  If *CertType* is *EFI_CERT_TYPE_RSA2048_SHA256_GUID* then the structure which follows has the format specified by *EFI_CERT_BLOCK_RSA_2048_SHA256*.
 
--  If *CertType* is *EFI_CERT_TYPE_PKCS7_GUID* then the *CertData* component shall contain a DER-encoded *SignedData* value following the Cryptographic Message Syntax (CMS, see [RFC5652]). The signature and digest algorithms are identified by the CMS *AlgorithmIdentifier* fields and their corresponding algorithm-specific standards. The *EFI_CERT_TYPE_PKCS7_GUID* name is historical; PKCS #7 version 1.5 ([RFC2315]) is the predecessor of CMS, and a PKCS #7 version 1.5 *SignedData* value shall continue to be accepted as the backward-compatible subset of CMS *SignedData*.
+-  If *CertType* is *EFI_CERT_TYPE_PKCS7_GUID* then the *CertData* component shall contain a DER-encoded *SignedData* value following the Cryptographic Message Syntax (CMS, see [RFC5652]). The signature algorithm is identified by the CMS *AlgorithmIdentifier* fields, which permit both classical algorithms (for example RSA or ECDSA) and post-quantum algorithms (for example ML-DSA; see [RFC9882]). The *EFI_CERT_TYPE_PKCS7_GUID* name is historical; PKCS #7 version 1.5 ([RFC2315]) is the predecessor of CMS, and a PKCS #7 version 1.5 *SignedData* value shall continue to be accepted as the backward-compatible subset of CMS *SignedData*.
 
 
 .. _firmware-os-key-exchange-creating-trust-relationships:
