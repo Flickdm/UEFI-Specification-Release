@@ -674,13 +674,13 @@ When the attribute EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS is set, the payloa
 
 In this example, NewCert and SigningCert are both instances of WIN_CERTIFICATE_UEFI_GUID. The presence of NewCert is indicated by the EFI_VARIABLE_AUTHENTICATION_3.Flags field (see Definition in SetVariable()). If provided – and assuming the payload passes all integrity and security verifications — this cert will be set as the new authority for the underlying variable, even if the variable is being newly created.
 
-The NewCert element must have a CertType of EFI_CERT_TYPE_PKCS7_GUID, and the CertData must be a DER-encoded SignedData structure per PKCS#7 version 1.5 (RFC 2315), which shall be supported both with and without a DER-encoded ContentInfo structure per PKCS#7 version 1.5. When creating the SignedData structure, the following steps shall be followed:
+The NewCert element must have a CertType of EFI_CERT_TYPE_PKCS7_GUID, and the CertData must be a DER-encoded *SignedData* structure following the Cryptographic Message Syntax (CMS, see [RFC5652]), which shall be supported both with and without a DER-encoded ContentInfo structure. For backward compatibility, a *SignedData* structure conforming to the PKCS#7 version 1.5 profile ([RFC2315]) — the predecessor of CMS — shall continue to be accepted. When creating the SignedData structure, the following steps shall be followed:
 
 1. Create a WIN_CERTIFICATE_UEFI_GUID structure where CertType is set to EFI_CERT_TYPE_PKCS7_GUID.
 
 #. Use the x509 cert being added as the new authority to sign its own tbsCertificate data.
 
-#. Construct a DER-encoded PKCS #7 version 1.5 SignedData (see [RFC2315]) with the signed content as follows:
+#. Construct a DER-encoded CMS *SignedData* structure (see [RFC5652]; a structure conforming to the PKCS#7 version 1.5 profile of [RFC2315] is the backward-compatible baseline) with the signed content as follows:
 
    a - SignedData.version shall be set to 1.
 
@@ -708,7 +708,7 @@ The NewCert element must have a CertType of EFI_CERT_TYPE_PKCS7_GUID, and the Ce
 
    - SignerInfo.unauthenticatedAttributes shall not be present.
 
-#. Set the CertData field to the DER-encoded PKCS#7 SignedData value.
+#. Set the CertData field to the DER-encoded CMS *SignedData* value.
 
 A caller to SetVariable() attempting to create, update, or delete a variable with the EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS set shall perform the following steps to create the SignedData structure for SigningCert:
 
@@ -746,7 +746,7 @@ A caller to SetVariable() attempting to create, update, or delete a variable wit
 
 #. Create a WIN_CERTIFICATE_UEFI_GUID structure where CertType is set to EFI_CERT_TYPE_PKCS7_GUID.
 
-#. Construct a DER-encoded PKCS #7 version 1.5 SignedData (see [RFC2315]) following the steps described for NewCert (step 3), above, with the following exception:
+#. Construct a DER-encoded CMS *SignedData* structure (see [RFC5652]; the PKCS#7 version 1.5 profile of [RFC2315] is the backward-compatible baseline) following the steps described for NewCert (step 3), above, with the following exception:
 
    a - SignedData.contentInfo.content shall beabsent (the content is provided in the Data parameterto the SetVariable() call)
 
@@ -824,7 +824,7 @@ A caller that invokes the SetVariable() service with the EFI_VARIABLE_TIME_BASED
 
 #. Sign the resulting digest using a selected signature scheme (e.g. PKCS #1 v1.5)
 
-#. Construct a DER-encoded SignedData structure per PKCS#7 version 1.5 (RFC 2315), which shall be supported both with and without a DER-encoded ContentInfo structure per PKCS#7 version 1.5, with the signed content as follows:
+#. Construct a DER-encoded *SignedData* structure following the Cryptographic Message Syntax (CMS, see [RFC5652]), which shall be supported both with and without a DER-encoded ContentInfo structure; a structure conforming to the PKCS#7 version 1.5 profile ([RFC2315]) is the backward-compatible baseline. The signed content shall be as follows:
 
    a - SignedData.version shall be set to 1
 
@@ -850,13 +850,13 @@ A caller that invokes the SetVariable() service with the EFI_VARIABLE_TIME_BASED
 
    — SignerInfo.unauthenticatedAttributes shall not be present.
 
-5. Set AuthInfo.CertData to the DER-encoded PKCS #7 SignedData value.
+5. Set AuthInfo.CertData to the DER-encoded CMS *SignedData* value.
 
 6. Construct Data parameter: Construct the SetVariable()’s Data parameter by concatenating the complete, serialized EFI_VARIABLE_AUTHENTICATION_2 descriptor with the new value of the variable (DataNew_variable_content).
 
 Firmware that implements the SetVariable() service and supports the EFI_VARIABLE_TIME_BASED _AUTHENTICATED_WRITE_ACCESS attribute shall do the following in response to being called:
 
-1. Verify that the correct AuthInfo.CertType (EFI_CERT_TYPE_PKCS7_GUID) has been used and that theAuthInfo.CertData value parses correctly as a PKCS #7SignedData value
+1. Verify that the correct AuthInfo.CertType (EFI_CERT_TYPE_PKCS7_GUID) has been used and that theAuthInfo.CertData value parses correctly as a CMS *SignedData* value (a PKCS #7 *SignedData* value is the backward-compatible subset)
 
 2. Verify that Pad1, Nanosecond, TimeZone, Daylight and Pad2   components of the TimeStamp value are set to zero. Unless the EFI_VARIABLE_APPEND_WRITE attribute is set, verify that the TimeStamp value is later than the current timestamp value associated with the variable.
  
@@ -874,7 +874,7 @@ Firmware that implements the SetVariable() service and supports the EFI_VARIABLE
 
    - If the variable is the "OsRecoveryOrder" or "OsRecovery####" variable mentioned in step 3, verify that the signer's certificate chains to a certificate in the "dbr" database or the Key Exchange Key database, or that the signature was made with the current Platform Key.
 
-   - Otherwise, if the variable is none of the above, it shall be designated a Private Authenticated Variable. If the Private Authenticated Variable does not exist, then the CN of the signing certificate's Subject and the hash of the tbsCertificate of the top-level issuer certificate (or the signing certificate itself if no other certificates are present or the certificate chain is of   length 1) in SignedData.certificates is registered for use in subsequent verifications of this variable. Implementations may store just a single hash of these two elements to reduce storage requirements. If the Private Authenticated variable previously existed, that the signer's certificate chains to the information previously associated with the variable. Observe that because no revocation list exists for them, if any member of the certificate chain is compromised, the only method to revoke trust in a certificate for a Private Authenticated Variable is to delete the variable, re-issue all certificate authorities in the chain, and re-create the variable using the new certificate chain. As such, the remaining benefits may be strong identification of the originator, or compliance with some certificate authority policy. Further note that the PKCS7 bundle for the authenticated variable update must contain the signing certificate chain, through and including the full certificate of the desired trust anchor. The trust anchor might be a mid-level certificate or root, though many roots may be unsuitable trust anchors due to the number of CAs they issue for different purposes. Some tools require non-default parameters to include the trust anchor certificate.
+   - Otherwise, if the variable is none of the above, it shall be designated a Private Authenticated Variable. If the Private Authenticated Variable does not exist, then the CN of the signing certificate's Subject and the hash of the tbsCertificate of the top-level issuer certificate (or the signing certificate itself if no other certificates are present or the certificate chain is of   length 1) in SignedData.certificates is registered for use in subsequent verifications of this variable. Implementations may store just a single hash of these two elements to reduce storage requirements. If the Private Authenticated variable previously existed, that the signer's certificate chains to the information previously associated with the variable. Observe that because no revocation list exists for them, if any member of the certificate chain is compromised, the only method to revoke trust in a certificate for a Private Authenticated Variable is to delete the variable, re-issue all certificate authorities in the chain, and re-create the variable using the new certificate chain. As such, the remaining benefits may be strong identification of the originator, or compliance with some certificate authority policy. Further note that the CMS *SignedData* bundle for the authenticated variable update must contain the signing certificate chain, through and including the full certificate of the desired trust anchor. The trust anchor might be a mid-level certificate or root, though many roots may be unsuitable trust anchors due to the number of CAs they issue for different purposes. Some tools require non-default parameters to include the trust anchor certificate.
 
 The driver shall update the value of the variable only if all of these checks pass. If any of the checks fails, firmware must return EFI_SECURITY_VIOLATION.
 
