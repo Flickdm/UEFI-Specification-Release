@@ -289,7 +289,7 @@ AuthInfo
 
   If the image has dependencies associated with it, a signature across the image data will be created by including the Monotonic Count followed by the dependency values. If there are no dependencies, the signature will be across the image data and the Monotonic Count value.
 
-  Caller uses the private key that is associated with a public key that has been provisioned via the key exchange. Because this is defined as a signature, *WIN_CERTIFICATE_UEFI_GUID.* *CertType* must be *EFI_CERT_TYPE_PKCS7_GUID*. The *CertData* is a CMS *SignedData* structure (see [RFC5652]); the *EFI_CERT_TYPE_PKCS7_GUID* name is historical, and the signature algorithm is identified by the CMS *AlgorithmIdentifier* fields, which permit both classical algorithms (for example RSA or ECDSA) and post-quantum algorithms (for example ML-DSA; see [RFC9882]). A PKCS#7 (see [RFC2315]) *SignedData* value is accepted as the backward-compatible subset of CMS *SignedData*.
+  Caller uses the private key that is associated with a public key that has been provisioned via the key exchange. Because this is defined as a signature, *WIN_CERTIFICATE_UEFI_GUID.* *CertType* must be *EFI_CERT_TYPE_PKCS7_GUID*. The *CertData* is a CMS *SignedData* structure (see [RFC5652]); the *EFI_CERT_TYPE_PKCS7_GUID* name is historical, and the signature algorithm is identified by the CMS *AlgorithmIdentifier* fields, which permit both traditional algorithms (for example RSA or ECDSA) and post-quantum algorithms (for example ML-DSA; see [RFC9882]). A PKCS#7 (see [RFC2315]) *SignedData* value is accepted as the backward-compatible subset of CMS *SignedData*.
 
 
 **Description**

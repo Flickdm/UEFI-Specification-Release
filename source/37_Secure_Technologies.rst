@@ -2380,7 +2380,7 @@ The *GetKeyByAttributes()* function will return a status which indicates the ove
 PKCS7 Verify Protocol
 ---------------------
 
-.. note:: The protocol name *EFI_PKCS7_VERIFY_PROTOCOL* is historical. PKCS#7 (see [RFC2315]) has been superseded by the Cryptographic Message Syntax (CMS, see [RFC5652]). The verification semantics defined in this section are CMS-based, and the protocol name does not constrain the signature algorithms that an implementation may accept. The signature algorithm is identified by the CMS *AlgorithmIdentifier* fields, which permit both classical algorithms (for example RSA or ECDSA) and post-quantum algorithms (for example ML-DSA; see [RFC9882]). The name *EFI_PKCS7_VERIFY_PROTOCOL* is retained for backward compatibility. New software should use the *EFI_CMS_VERIFY_PROTOCOL* alias defined below.
+.. note:: The protocol name *EFI_PKCS7_VERIFY_PROTOCOL* is historical. PKCS#7 (see [RFC2315]) has been superseded by the Cryptographic Message Syntax (CMS, see [RFC5652]). The verification semantics defined in this section are CMS-based, and the protocol name does not constrain the signature algorithms that an implementation may accept. The signature algorithm is identified by the CMS *AlgorithmIdentifier* fields, which permit both traditional algorithms (for example RSA or ECDSA) and post-quantum algorithms (for example ML-DSA; see [RFC9882]). The name *EFI_PKCS7_VERIFY_PROTOCOL* is retained for backward compatibility. New software should use the *EFI_CMS_VERIFY_PROTOCOL* alias defined below.
 
 .. _efi-pkcs7-verify-protocol:
 
