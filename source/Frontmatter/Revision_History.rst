@@ -24,7 +24,7 @@ Many people have contributed to the contents of this specification, including th
    :widths: 10 60 30
 
    **Revision** | **Issue # - Description** | **Modified/Added Content**
-  2.11 | XXXX - Remove Audit Mode language | Modified :numref:`globally-defined-variables`, :numref:`secure-boot-modes`, :numref:`image-execution-information-table`
+  2.11 | XXXX - Remove Audit Mode language and the Image Execution Information Table | Modified :numref:`globally-defined-variables`, :numref:`secure-boot-modes`
    2.11 | 2365 - New Memory Attribute for hot plug | :numref:`efi-boot-services-getmemorymap`
    2.11 | 2371 - Correct the description of EFI_KMS_PROTOCOL.DeleteKey(), KeyDescriptors | :numref:`efi-key-management-service-protocol`, :numref:`efi-kms-protocol-deletekey`
    2.11 | 2384 - Mandate the UEFI Arm implementation to allocate pages from the 48-bit address range first | :numref:`aarch64-platforms`
@@ -83,7 +83,7 @@ Many people have contributed to the contents of this specification, including th
    2.10 | 2229 - Support ISA-specific memory attributes in descriptors | :numref:`memory-types`, :numref:`efi-boot-services-getmemorymap`
    2.10 | 2247 - Support crypto agile | :numref:`cryptographic-algorithm-requirement`, :numref:`using-the-efi-variable-authentication-3-descriptor`, :numref:`using-the-efi-variable-authentication-2-descriptor`, :numref:`eap-protocol`, :numref:`efi-tls-protocols`, :numref:`firmware-os-key-exchange-creating-trust-relationships`, :numref:`authorization-process`, :numref:`pkcs7-verify-protocol`
    2.10 | 2262 - Add Memory Protection proposal - UEFI_MEMORY_ATTRIBUTE protocol | :numref:`efi-memory-attribute-protocol`
-   2.10 | 2266 - Code First - Image Execution Table - revocations of hashes (Samer El-Haj-Mahmoud) | :numref:`image-execution-information-table`
+   2.10 | 2266 - Code First - Image Execution Table - revocations of hashes (Samer El-Haj-Mahmoud) | Image Execution Information Table
    2.10 | 2271 - Introduce UEFI Conformance Profiles | :numref:`requirements`, :numref:`efi_conformance_profile_table`
    2.10 | 2277 - Code first - Uart() UEFI DevicePath binary/text confusion issue (Samer El-Haj-Mahmoud) | :numref:`text-device-node-reference`
    2.10 | 2278 - AARCH64 binding requirement for an OS calling RT services on platforms with SME | :numref:`aarch64-platforms`, :numref:`detailed-calling-convention-1`
