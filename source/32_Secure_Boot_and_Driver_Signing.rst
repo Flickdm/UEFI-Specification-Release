@@ -705,15 +705,11 @@ While no Platform Key is enrolled, the SetupMode variable *shall* be equal to 1.
 
 After the Platform Key is enrolled, the SetupMode variable shall be equal to 0. While SetupMode == 0, the platform firmware *shall* require authentication in order to modify the Platform Key, Key Enrollment Key, OsRecoveryOrder, OsRecovery####, and image security databases. 
 
-While no Platform Key is enrolled, and while the variable AuditMode == 0, the platform is said to be operating in setup mode. 
+While no Platform Key is enrolled, the platform is said to be operating in setup mode. 
 
-After the Platform Key is enrolled, and while the variable AuditMode == 0, the platform is operating in user mode. The platform will continue to operate in user mode until the Platform Key is cleared, or the system is transitioned to either Audit or Deployed Modes. See "Clearing The Platform Key," "Transitioning to Audit Mode," and "Transitioning to Deployed Mode" for more information. 
+After the Platform Key is enrolled, the platform is operating in user mode. The platform will continue to operate in user mode until the Platform Key is cleared. See "Clearing The Platform Key" for more information. 
 
-Audit Mode enables programmatic discovery of signature list combinations that successfully authenticate installed EFI images without the risk of rendering a system unbootable. Chosen signature lists configurations can be tested to ensure the system will continue to boot after the system is transitioned out of Audit Mode. Details on how to transition to Audit Mode are detailed below in the section "Transitioning to Audit Mode." After transitioning to Audit Mode, signature enforcement is disabled such that all images are initialized and enhanced Image Execution Information Table (IEIT) logging is performed including recursive validation for multi-signed images. 
-
-Deployed Mode is the most secure mode. For details on transitioning to Deployed Mode see the section "Transitioning to Deployed Mode" below. By design, both User Mode and Audit Mode support unauthenticated transitions to Deployed Mode. However, to move from Deployed Mode to any other mode requires a secure platform-specific method, or deleting the PK, which is authenticated. 
-
-Secure Boot Mode transitions to User Mode or Deployed Mode shall take effect immediately. Mode transitions to Setup Mode or Audit Mode may either take effect immediately (recommended) or after a reset. For implementations that require a reset, the mode transition shall be processed prior to the initialization of the SecureBoot variable, and the SetVariable() workflow shall be as follows: 
+Secure Boot Mode transitions to User Mode *shall* take effect immediately. Mode transitions to Setup Mode may either take effect immediately (recommended) or after a reset. For implementations that require a reset, the mode transition *shall* be processed prior to the initialization of the SecureBoot variable, and the SetVariable() workflow *shall* be as follows: 
 
 #. If the variable has an authenticated attribute, it shall be authenticated as specified, and failure will result in immediate termination of this workflow by returning the appropriate error.
 
@@ -755,24 +751,6 @@ Clearing The Platform Key
 #########################
 
 The platform owner clears the public half of the Platform Key (PKpub) by deleting the Platform Key variable using UEFI Runtime Service *SetVariable()*. The data buffer submitted to the *SetVariable()* must be signed with the current PKpriv - see :ref:`variable-services` for details. The name and GUID of the Platform Key variable are specified in :ref:`globally-defined-variables`. The platform key may also be cleared using a secure platform-specific method. When the platform key is cleared, the global variable *SetupMode* must also be updated to 1.
-
-
-.. _transitioning-to-audit-mode:
-
-Transitioning to Audit Mode
-###########################
-
-To enter Audit Mode, a new UEFI variable AuditMode is set to 1. Entering Audit Mode has the side effect of changing SetupMode == 1, PK is cleared, and the new DeployedMode == 0.
-
-**NOTE**: *The AuditMode variable is only writable before* ExitBootServices() *is called when the system is* **not** *in Deployed Mode*. See :ref:`secure-boot-modes`  *for more details.*
-
-
-.. _transitioning-to-deployed-mode:
-
-Transitioning to Deployed Mode
-##############################
-
-To enter Deployed Mode from Audit Mode, set the variable PK. To enter Deployed Mode from User Mode, set the variable DeployedMode to 1. This transition takes effect immediately with no reset required. Entering Deployed Mode has the side effect of changing SetupMode == 0, AuditMode == 0 and is made read-only, and DeployedMode == 1 and is made read-only. See :ref:`secure-boot-modes`  for more details.
 
 
 .. _enrolling-key-exchange-keys:
@@ -1154,134 +1132,6 @@ When a write may be authenticated using any signature from multiple signature li
 The *SignatureHeader* size shall always be 0. The *SignatureSize* shall always be 16 (size of *SignatureOwner* component) + 1 byte. The one byte of *SignatureData* exists only for compatibility reasons; It should be written as zero, and any value read should be ignored.
 
 
-.. _image-execution-information-table:
-
-Image Execution Information Table
-#################################
-
-
-**Summary**
-
-When *AuditMode==0,* if the image’s signature is not found in the authorized database, or is found in the forbidden database, the image will not be started and instead, information about it will be placed in the EFI_IMAGE_EXECUTION_INFO_TABLE (see :ref:`image-execution-information-table`).
-
-When *AuditMode==1,* *an* *EFI_IMAGE_EXECUTION_INFO* *element is created in the* *EFI_IMAGE_EXECUTION_INFO_TABLE* *for every certificate found in the certificate table of every image that is validated.* 
-
-Additionally for every image, an element will be created in the table for every EFI_CERT_SHAXXX that is supported by the platform. The contents of* *Action* *for each element are determined by comparing that specific element’s* *Signature* *(which will contain exactly 1* *EFI_SIGNATURE_DATA* *) to the currently-configured image security databases and policies, and shall be either* *EFI_IMAGE_EXECUTION_AUTH_SIG_PASSED*, *EFI_IMAGE_EXECUTION_AUTH_SIG_FAILED*, *EFI_IMAGE_EXECUTION_AUTH_SIG_NOT_FOUND*, *EFI_IMAGE_EXECUTION_AUTH_SIG_FOUND*, or *EFI_IMAGE_EXECUTION_POLICY_FAILED*. 
-
-Finally, because the system is in Audit Mode, all modules are initialized even if they fail to authenticate, and the *EFI_IMAGE_EXECUTION_INITIALIZED* bit shall be set in *Action* for all elements.
-
-
-**Prototype**
-
-.. code-block::
-
-   typedef struct {
-     EFI_IMAGE_EXECUTION_ACTION     Action;
-     UINT32                         InfoSize;
-   // CHAR16                        Name [__];
-   // EFI_DEVICE_PATH_PROTOCOL      DevicePath;
-   // EFI_SIGNATURE_LIST            Signature;
-   } EFI_IMAGE_EXECUTION_INFO;  
-
-
-**Parameters**
-
-Action
-  Describes the action taken by the firmware regarding this image. Type EFI_IMAGE_EXECUTION_ACTION is described in "Related Definitions" below.
-
-InfoSize
-  Size of all of the entire structure.
-
-Name
-  If this image was a UEFI device driver (for option ROM, for example) this is the null-terminated, user-friendly name for the device. If the image was for an application, then this is the name of the application. If this cannot be determined, then a simple NULL character should be put in this position.
-
-DevicePath
-  Image device path. The image device path typically comes from the Loaded Image Device Path Protocol installed on the image handle. If image device path cannot be determined, a simple end-of-path device node should be put in this position.
-
-Signature
-  Zero or more image signatures. If the image contained no signatures, then this field is empty. The type *WIN_CERTIFICATE* is defined in chapter 26.
-
-
-**Prototype**
-
-.. code-block::
-
-   typedef struct {
-     UINTN                       NumberOfImages;
-     EFI_IMAGE_EXECUTION_INFO    InformationInfo[__]
-   }   EFI_IMAGE_EXECUTION_INFO_TABLE;
-
-
-NumberOfImages
-  Number of *EFI_IMAGE_EXECUTION_INFO* structures.
-
-InformationInfo
-  *NumberOfImages* instances of  *EFI_IMAGE_EXECUTION_INFO* structures.
-
-
-**Related Definitions**
-
-.. code-block::
-
-   typedef UINT32 EFI_IMAGE_EXECUTION_ACTION; 
-
-   #define EFI_IMAGE_EXECUTION_AUTHENTICATION      0x00000007  
-   #define EFI_IMAGE_EXECUTION_AUTH_UNTESTED       0x00000000  
-   #define EFI_IMAGE_EXECUTION_AUTH_SIG_FAILED     0x00000001  
-   #define EFI_IMAGE_EXECUTION_AUTH_SIG_PASSED     0x00000002  
-   #define EFI_IMAGE_EXECUTION_AUTH_SIG_NOT_FOUND  0x00000003  
-   #define EFI_IMAGE_EXECUTION_AUTH_SIG_FOUND      0x00000004  
-   #define EFI_IMAGE_EXECUTION_POLICY_FAILED       0x00000005
-
-   #define EFI_IMAGE_EXECUTION_INITIALIZED         0x00000008
-  
-
-**Description**
-
-This structure describes an image in the EFI System Configuration Table. It is only required in the case where image signatures are being checked and the image was not initialized because its signature failed, when AuditMode==1, or was not found in the signature database *and* an authorized user or the owner would not authorize its execution. It may be used in other cases as well. 
-
-In these cases, the information about the image is copied into the EFI System Configuration Table. Information about other images which were successfully initialized may also be included as well, but this is not required. 
-
-The *Action* field describes what action the firmware took with regard to the image and what other information it has about the image, including the device which it is related to. 
-
-First, this field describes the results of the firmware’s attempt to authenticate the image.
-
-.. list-table:: Authentication Attempt Status Codes
-   :name: authentication-attempt-status-codes
-   :class: longtable
-   :widths: auto
-   :header-rows: 1
-
-   * - Authentication attempt status
-     - Condition met
-   * - *EFI_IMAGE_EXECUTION_AUTH_UNTESTED*
-     - The image contained no certificates
-   * - *EFI_IMAGE_EXECUTION_AUTH_SIG_FAILED*
-     - The image has at least one certificate, and either:
-        - An image certificate is in the forbidden database, **or**
-        - A digest of an image certificate is in the forbidden database, **or**
-        - The image signature check failed.
-   * - *EFI_IMAGE_EXECUTION_AUTH_SIG_PASSED*
-     - The image has at least one certificate, and either:
-        - An image certificate is in authroized database.
-        - The image digest is in the authorized database.
-   * - *EFI_IMAGE_EXECUTION_AUTH_SIG_NOT_FOUND*
-     - The image has at least one certificate, and:
-        - the image certificate is not found in the authorized database, **and**
-        - the image digest is not in the authorized database.
-   * - *EFI_IMAGE_EXECUTION_AUTH_SIG_FOUND*
-     - The image has at least one certificate, and the image digest is in the forbidden database.
-   * - *EFI_IMAGE_EXECUTION_POLICY_FAILED*
-     - Authentication failed because of (unspecified) firmware security policy.
-
-
-Second, this field describes whether the image was initialized or not. 
-
-This table can be used by an agent which executes later to audit which images were not loaded and perhaps query other sources to discover whether the image should be authorized. If so, the agent can use the method described in "Signature Database Update" to update the Signature Database with the image’s signature. Switching the system into Audit Mode generates a more verbose table which provides additional insights to this agent. 
-
-If an attempt to boot a legacy non-UEFI OS takes place when the system is in User Mode, the OS load shall fail and a corresponding *EFI_IMAGE_EXECUTION_INFO* entry shall be created with Action set to *EFI_IMAGE_EXECUTION_AUTH_UNTESTED,* Name set to the NULL-terminated "Description String" from the BIOS Boot Specification Device Path and DevicePath set to the BIOS Boot Specification Device Path ( :ref:`bios-boot-specification-device-path` ). 
-
-
 .. [editing note] removed section 32.5 Firmware/OS Crypto Algorithm Exchange, per Mantis 2480.
 
 
@@ -1303,7 +1153,7 @@ The mechanism described here requires that the platform firmware maintain a sign
 
 It also requires that the platform firmware maintain a signature database with entries for each forbidden UEFI image. This signature database is also a single UEFI variable. 
 
-The signature database is checked when the UEFI Boot Manager is about to start a UEFI image. If the UEFI image’s signature is not found in the authorized database, or is found in the forbidden database, the UEFI image will be deferred and information placed in the Image Execution Information Table. In the case of OS Loaders, the next boot option will be selected. The signature databases may be updated by the firmware, by a pre-OS application or by an OS application or driver. 
+The signature database is checked when the UEFI Boot Manager is about to start a UEFI image. If the UEFI image’s signature is not found in the authorized database, or is found in the forbidden database, the UEFI image will be deferred. In the case of OS Loaders, the next boot option will be selected. The signature databases may be updated by the firmware, by a pre-OS application or by an OS application or driver. 
 
 If a firmware supports the *EFI_CERT_X509_SHA*_GUID* signature types, it should support the RFC3161 timestamp specification. Images whose signature matches one of these types in the forbidden signature database shall only be considered forbidden if the firmware either does not support timestamp verification, or the signature type has a time of revocation equal to zero, or the timestamp does not pass verification against the authorized timestamp and forbidden signature databases, or finally the signature type's time of revocation is less than or equal to the time recorded in the image signature's timestamp. If the timestamp's signature is authorized by the authorized timestamp database and the time recorded in the timestamp is less than the time of revocation, the image shall not be considered forbidden provided it is not forbidden by any other entry in the forbidden signature database. Finally, this requires that firmware supporting timestamp verification must support the authorized timestamp database and have a suitable time stamping authority certificate in that database. 
 
@@ -1375,26 +1225,6 @@ The following diagram illustrates the process for adding a new signature by the 
    Process for Adding a New Signature by the OS
 
 
-.. _using-the-efi-system-configuration-table:
-
-Using The Image Execution Information Table
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-
-During the process of loading UEFI images, the firmware must gather information about which UEFI images were not started. The firmware may additionally gather information about UEFI images which were started. The information is used to create the IEFI_IMAGE_EXECUTION_INFO_TABLE, which is added to the EFI System Configuration Table and assigned the GUID *EFI_IMAGE_SECURITY_DATABASE_GUID.* 
-
-For each UEFI image, the following information is collected:
-
--  The image hash.
-
--  The user-friendly name of the UEFI image (if known)
-
--  The device path
-
--  The action taken on the device (was it initialized or why was it rejected). 
-
-For more information, see the Image Execution Information Table definition above ( :ref:`image-execution-information-table`).
-
-
 .. _firmware-policy:
 
 Firmware Policy
@@ -1445,7 +1275,7 @@ Then, based on this match or its own policy, the firmware can decide whether or 
 
 #. Go To Next Boot Option. If an UEFI image is rejected, then the next boot option is selected normally and go to step 3. This is in the case where the image is listed as a boot option.
 
-#. UEFI Image Signature Passed In System Configuration Table. If user defers, then the UEFI image signature is copied into the Image Execution Information Table in the EFI System Configuration Table which is available to the operating system.
+#. UEFI Image Signature Passed In System Configuration Table. If user defers, then the UEFI image signature is copied into the EFI System Configuration Table which is available to the operating system.
 
 #. OS Application Validates UEFI Image. An OS application determines whether the image is valid.
 

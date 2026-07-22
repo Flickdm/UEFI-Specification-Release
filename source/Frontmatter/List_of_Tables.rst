@@ -333,7 +333,6 @@
 - :numref:`chap-authentication-node-structure-using-radius` :ref:`chap-authentication-node-structure-using-radius`
 - :numref:`chap-authentication-node-structure-using-local-database` :ref:`chap-authentication-node-structure-using-local-database`
 - :numref:`pe-coff-certificates-types-and-uefi-signature-database-certificate-types` :ref:`pe-coff-certificates-types-and-uefi-signature-database-certificate-types`
-- :numref:`authentication-attempt-status-codes` :ref:`authentication-attempt-status-codes`
 
 **Chapter 33**
 
