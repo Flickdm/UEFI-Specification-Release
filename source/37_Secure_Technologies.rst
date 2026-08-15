@@ -5101,12 +5101,75 @@ Entries
   .. note:: The GUID naming should be prefixed with `EFI_` to follow convention that these are well known GUIDs defined within the UEFI specification.  Custom GUIDs for custom features should be prefixed with a unique vendor prefix to avoid conflicts with well known features and other vendor features.
 
 
+  Algorithm Group Definition
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+  Several feature entries declare their supported algorithms using a common,
+  extensible primitive: an *algorithm group*. Each group tags a set of object
+  identifiers (OIDs) with the cryptographic *class* (the role) those OIDs play
+  within the feature, for example a set of signature algorithms and a separate
+  set of message-digest (hash) algorithms. A consumer that does not recognize a
+  given *AlgorithmClass* shall skip that group using *OidsLength*, so new
+  algorithm classes can be added without breaking existing parsers.
+
+.. code-block::
+
+   //
+   // Algorithm class identifiers. The class identifies the role an OID set
+   // plays within a feature entry, so each cryptographic dimension can be
+   // reasoned about independently.
+   //
+   #define EFI_CIE_ALG_CLASS_SIGNATURE  0x0001  // Signature-algorithm OIDs the verifier accepts, in canonical form: fused for RSA/ECDSA (sha256WithRSAEncryption, ecdsa-with-SHA256), standalone for ML-DSA (id-ml-dsa-65).
+   #define EFI_CIE_ALG_CLASS_HASH       0x0002  // Message-digest (image-hash) algorithms (sha1, sha256, sha384, sha512).
+   // 0x0004 - 0x7FFF reserved for future UEFI-defined classes.
+   // 0x8000 - 0xFFFF reserved for vendor-defined classes.
+
+   typedef struct {
+     UINT16  AlgorithmClass;  // One of EFI_CIE_ALG_CLASS_*.
+     UINT16  OidsLength;      // Length in bytes of Oids[], including the null terminator.
+     // CHAR8 Oids[];         // Comma separated value (CSV) string of ASCII CHAR8 OID characters with null terminator.
+   } EFI_CIE_ALGORITHM_GROUP;
+
+   typedef struct {
+     UINT16  GroupCount;                   // Number of EFI_CIE_ALGORITHM_GROUP records that follow.
+     // EFI_CIE_ALGORITHM_GROUP  Groups[];
+   } EFI_CIE_ALGORITHM_GROUP_LIST;
+
+  A feature entry that embeds an *EFI_CIE_ALGORITHM_GROUP_LIST* declares
+  *GroupCount* groups back to back; each group is *AlgorithmClass*, *OidsLength*,
+  then *OidsLength* bytes of CSV OID string. A feature should declare at most one
+  group per *AlgorithmClass*.
+
+.. note::
+   The following is a non-normative example of an Image Verification entry
+   *EntryData*. The specific algorithm OIDs are illustrative only; a platform
+   declares whatever algorithms it actually supports.
+
+.. code-block::
+
+   EFI_CIE_DATA_IMAGE_VERIFICATION_ENTRY (EntryData)
+     GroupCount = 2
+
+     Groups[0]  AlgorithmClass = EFI_CIE_ALG_CLASS_SIGNATURE (0x0001)
+                OidsLength     = 46
+                Oids           = "1.2.840.113549.1.1.11,2.16.840.1.101.3.4.3.18"
+                                  (sha256WithRSAEncryption, id-ml-dsa-65)
+
+     Groups[1]  AlgorithmClass = EFI_CIE_ALG_CLASS_HASH (0x0002)
+                OidsLength     = 69
+                Oids           = "2.16.840.1.101.3.4.2.1,2.16.840.1.101.3.4.2.2,2.16.840.1.101.3.4.2.3"
+                                  (sha256, sha384, sha512)
+
+
   Image Verification Feature Entry
   $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
   Image Verification feature is related to UEFI Secure Boot code signing. 
   UEFI follows Authenticode with PKCS7 signatures and X509 certificates.  The ECIT entry for this feature will declare the supported OIDs
   for the code signing algorithms that are supported for UEFI Secure Boot image verification.
+  Algorithms are declared as *algorithm groups* (see Algorithm Group Definition), so that both the
+  signature algorithms and the message-digest (hash) algorithms used by Authenticode - both of which
+  are required to complete a verification - are reported as distinct algorithm classes.
   
   This feature entry is *required* for any system that supports UEFI Secure Boot.
 
@@ -5121,7 +5184,7 @@ Entries
 
 
    typedef struct {
-     CHAR8 SupportedAlgorithmOids[];  //Comma separated value (CSV) string of ASCII CHAR8 characters with null terminator.
+     EFI_CIE_ALGORITHM_GROUP_LIST  AlgorithmGroups;  // Supported algorithms grouped by class (signature, hash).
    } EFI_CIE_DATA_IMAGE_VERIFICATION_ENTRY;
 
   Secure Boot Authorization Feature Entry
@@ -5206,7 +5269,7 @@ Entries
      {0x8b, 0xf5, 0xea, 0xf0, 0x4f, 0x45, 0x22, 0x9d}}
 
    typedef struct {
-    CHAR8 SupportedAlgorithmOids[];  //Comma separated value (CSV) string of ASCII CHAR8 characters with null terminator.
+     EFI_CIE_ALGORITHM_GROUP_LIST  AlgorithmGroups;  // Supported algorithms grouped by class (signature, hash).
    } EFI_CIE_DATA_AUTH_VARS_ENTRY;
 
   System Firmware Update Feature Entry
@@ -5222,7 +5285,7 @@ Entries
       {0xae, 0xae, 0x9b, 0x21, 0xa4, 0xb9, 0x02, 0x58}}
      
     typedef struct {
-      CHAR8 SupportedAlgorithmOids[];  //Comma separated value (CSV) string of ASCII CHAR8 characters with null terminator.
+      EFI_CIE_ALGORITHM_GROUP_LIST  AlgorithmGroups;  // Supported algorithms grouped by class (signature, hash).
     } EFI_CIE_DATA_SYS_FW_UPDATE_ENTRY;
 
   ESRT Device Firmware Update Feature Entry
@@ -5240,8 +5303,8 @@ Entries
     {0xaa, 0xad, 0x89, 0x87, 0x16, 0x4e, 0xad, 0x4c}} 
    
    typedef struct {
-     EFI_GUID   Esrt_Guid;  //Guid used to identify the esrt noted
-     CHAR8 SupportedAlgorithmOids[];  //Comma separated value (CSV) string of ASCII CHAR8 characters with null terminator.  
+     EFI_GUID                      Esrt_Guid;        // Guid used to identify the ESRT noted.
+     EFI_CIE_ALGORITHM_GROUP_LIST  AlgorithmGroups;  // Supported algorithms grouped by class (signature, hash).
    } EFI_CIE_DATA_ESRT_ENTRY; 
 
 
